@@ -435,7 +435,39 @@ After that check is the selected port already enabled with the following command
 $ firewall-cmd --permanent --zone=public --list-ports
 ```
 
-4 | Create a forntend project folder which will be read by nginx
+4 | Open selected port
+
+After we enable the firewall on port that we want to use, we need to open the tcp port become available:
+
+```linux
+$ semanage port -a -t http_port_t -p tcp 3001
+```
+
+Sometimes it will return error like this:
+
+```linux
+ValueError: Port tcp/4001 already defined
+```
+
+Dont worry, we can replace `-a` option with `-m` for modify as follows:
+
+```linux
+$ semanage port -m -t http_port_t -p tcp 3001
+```
+
+After that, check to verify port that we want is available:
+
+```linux
+$ semanage port -l | grep http_port_t
+```
+
+It will return similar like this:
+
+```linux
+http_port_t                    tcp      4001, 80, 81, 443, 488, 8008, 8009, 8443, 9000
+```
+
+5 | Create a forntend project folder which will be read by nginx
 
 ```linux
 $ mkdir -p /var/www/project-name
@@ -443,7 +475,7 @@ $ mkdir -p /var/www/project-name
 
 note: `-p` flag is used to create nested directory and `project-name` is the name of the project folder
 
-5 | Change the project folder permissions to make it accessible to everyone with the followng command:
+6 | Change the project folder permissions to make it accessible to everyone with the followng command:
 
 ```linux
 $ chown -R $USER:$USER /var/www/project-name
@@ -451,7 +483,7 @@ $ chmod -R 755 /var/www
 $ restorecon -R /var/www/project-name
 ```
 
-6 | Create index.html as the main html file which will be read by nginx. Or you can copy or clone your ready-project for example using git. But in this chase we will try to create new html file
+7 | Create index.html as the main html file which will be read by nginx. Or you can copy or clone your ready-project for example using git. But in this chase we will try to create new html file
 
 ```linux
 $ nano /var/www/project-name/index.html
@@ -470,14 +502,14 @@ Once you are directed to the text editor, paste the following html code as an ex
 </html>
 ```
 
-7 | Create `sites-available` and `sites-enable` folder a config folder which will be read by nginx (ignore this step if the folders already created)
+8 | Create `sites-available` and `sites-enable` folder a config folder which will be read by nginx (ignore this step if the folders already created)
 
 ```linux
 $ mkdir /etc/nginx/sites-available
 $ mkdir /etc/nginx/sites-enabled
 ```
 
-8 | Open Nginx configuration file
+9 | Open Nginx configuration file
 
 ```linux
 $ nano /etc/nginx/nginx.conf
@@ -535,7 +567,7 @@ server {
 include /etc/nginx/sites-enabled/*.conf
 ```
 
-9 | Create new nginx config file at `sites-available` with file name as your project name
+10 | Create new nginx config file at `sites-available` with file name as your project name
 
 ```linux
 $ nano /etc/nginx/sites-available/project-name.conf
@@ -565,7 +597,7 @@ server {
 
 Maybe you will think that the code is similar to the nginx config code in step number 8. The difference are `port number` assign with selected port and `root directory` assign with your project directory that you have been created before
 
-10 | Finally the final step. Link the config file that have been just created on `sites-available` to `sites-enabled` with this following command:
+11 | Finally the final step. Link the config file that have been just created on `sites-available` to `sites-enabled` with this following command:
 
 ```linux
 $ ln -s /etc/nginx/sites-available/project-name.conf /etc/nginx/sites-enabled/project-name.conf
