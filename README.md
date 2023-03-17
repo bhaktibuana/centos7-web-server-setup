@@ -464,7 +464,7 @@ $ semanage port -l | grep http_port_t
 It will return similar like this:
 
 ```linux
-http_port_t                    tcp      4001, 80, 81, 443, 488, 8008, 8009, 8443, 9000
+http_port_t                    tcp      3001, 80, 81, 443, 488, 8008, 8009, 8443, 9000
 ```
 
 5 | Create a forntend project folder which will be read by nginx
