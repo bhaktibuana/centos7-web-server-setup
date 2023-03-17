@@ -582,6 +582,10 @@ server {
   server_name  _;
   root         /var/www/project-name;
 
+  location / {
+    try_files $uri /index.html;
+  }
+
   # Load configuration files for the default server block.
   include /etc/nginx/default.d/*.conf;
 
@@ -595,7 +599,7 @@ server {
 }
 ```
 
-Maybe you will think that the code is similar to the nginx config code in step number 8. The difference are `port number` assign with selected port and `root directory` assign with your project directory that you have been created before
+Maybe you will think that the code is similar to the nginx config code in step number 8. The difference are `port number` assign with selected port and `root directory` assign with your project directory that you have been created before and add new `location / { ... }` code block
 
 11 | Finally the final step. Link the config file that have been just created on `sites-available` to `sites-enabled` with this following command:
 
@@ -710,7 +714,7 @@ server {
 }
 ```
 
-That code is server config block code for default http port (port 80). Change the root directory project with your project directory that you just have been created. It should similar like this:
+That code is server config block code for default http port (port 80). Change the root directory project with your project directory that you just have been created and add `location / { ... }` code block under the root directory. It should similar like this:
 
 ```conf
 server {
@@ -718,6 +722,10 @@ server {
   listen        [::]:80;
   server_name   _;
   root          /var/www/project-name;
+
+  location / {
+    try_files $uri /index.html;
+  }
 
   # Load configuration files for the default server block.
   include /etc/nginx/default.d/*.conf;
