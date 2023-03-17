@@ -6,7 +6,7 @@ This repository is documentation on how to setup a web server on CentOS 7 operat
 
 ## Install Everything Needed
 
-Before start the installation setup, you need to turn into root account by riunnging
+Before start the installation setup, you need to go `root directory` and turn into root account by running the following command:
 
 ```linux
 $ sudo su
@@ -382,6 +382,346 @@ The output on your browser will be like this:
 </details>
 
 ## Frontend Deployment
+
+There are three different ways to deploy forntend on Nginx CentOS 7. Deploying on default HTTP port (port 80), deploying on default HTTPS port (port 443) and deploying on custom available port (eg. port 3001). First, this documentation will show you how to deploy custom port as follows.
+
+<details>
+<summary><b>Deployment on custom port</b></summary>
+
+<p>
+
+In this case for example we will use `port 3001`.
+
+1 | Go to the `root directory` and run the following command to get root access
+
+```linux
+$ sudo su
+```
+
+2 | Check used ports with this following command:
+
+```linux
+$ netstat -tunlp
+```
+
+The output will similar like this:
+
+```linux
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+tcp        0      0 127.0.0.1:1434          0.0.0.0:*               LISTEN      3270/sqlservr
+tcp        0      0 0.0.0.0:111             0.0.0.0:*               LISTEN      550/rpcbind
+tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      1862/nginx: master
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      1150/sshd
+tcp        0      0 127.0.0.1:1431          0.0.0.0:*               LISTEN      3270/sqlservr
+tcp        0      0 0.0.0.0:1433            0.0.0.0:*               LISTEN      3270/sqlservr
+tcp        0      0 127.0.0.1:25            0.0.0.0:*               LISTEN      1097/master
+tcp6       0      0 ::1:1434                :::*                    LISTEN      3270/sqlservr
+tcp6       0      0 :::111                  :::*                    LISTEN      550/rpcbind
+tcp6       0      0 :::80                   :::*                    LISTEN      1862/nginx: master
+```
+
+The ports on the list above are ports that already used, you can choose the available port for example `port 3001`
+
+3 | Enable firewall on port that will used (eg. port 3001)
+
+```linux
+$ firewall-cmd --permanent --zone=public --add-port=3001/tcp
+$ firewall-cmd --reload
+```
+
+After that check is the selected port already enabled with the following command:
+
+```linux
+$ firewall-cmd --permanent --zone=public --list-ports
+```
+
+4 | Create a forntend project folder which will be read by nginx
+
+```linux
+$ mkdir -p /var/www/project-name
+```
+
+note: `-p` flag is used to create nested directory and `project-name` is the name of the project folder
+
+5 | Change the project folder permissions to make it accessible to everyone with the followng command:
+
+```linux
+$ chown -R $USER:$USER /var/www/project-name
+$ chmod -R 755 /var/www
+$ restorecon -R /var/www/project-name
+```
+
+6 | Create index.html as the main html file which will be read by nginx. Or you can copy or clone your ready-project for example using git. But in this chase we will try to create new html file
+
+```linux
+$ nano /var/www/project-name/index.html
+```
+
+Once you are directed to the text editor, paste the following html code as an example project
+
+```html
+<html>
+  <head>
+    <title>Whelcome to my app :)</title>
+  </head>
+  <body>
+    <h1>Hello! This is an app with port 3001</h1>
+  </body>
+</html>
+```
+
+7 | Create `sites-available` and `sites-enable` folder a config folder which will be read by nginx (ignore this step if the folders already created)
+
+```linux
+$ mkdir /etc/nginx/sites-available
+$ mkdir /etc/nginx/sites-enabled
+```
+
+8 | Open Nginx configuration file
+
+```linux
+$ nano /etc/nginx/nginx.conf
+```
+
+You will see the nginx configuration code. Inside the `html { ... }` block find the code that similar with:
+
+```conf
+server {
+  listen        80;
+  listen        [::]:80;
+  server_name   _;
+  root          /usr/share/nginx/html;
+
+  # Load configuration files for the default server block.
+  include /etc/nginx/default.d/*.conf;
+
+  error_page 404 /404.html;
+  location = /404.html {
+  }
+
+  error_page 500 502 503 504 /50x.html;
+  location = /50x.html {
+  }
+}
+```
+
+That code is server config block code for default http port (port 80). Under that code (outside server { ... } block), add this following code
+
+```conf
+include /etc/nginx/sites-enabled/*.conf
+```
+
+And it will be looks like this:
+
+```conf
+server {
+  listen        80;
+  listen        [::]:80;
+  server_name   _;
+  root          /usr/share/nginx/html;
+
+  # Load configuration files for the default server block.
+  include /etc/nginx/default.d/*.conf;
+
+  error_page 404 /404.html;
+  location = /404.html {
+  }
+
+  error_page 500 502 503 504 /50x.html;
+  location = /50x.html {
+  }
+}
+
+include /etc/nginx/sites-enabled/*.conf
+```
+
+9 | Create new nginx config file at `sites-available` with file name as your project name
+
+```linux
+$ nano /etc/nginx/sites-available/project-name.conf
+```
+
+And paste this following code:
+
+```conf
+server {
+  listen       3001;
+  listen       [::]:3001;
+  server_name  _;
+  root         /var/www/project-name;
+
+  # Load configuration files for the default server block.
+  include /etc/nginx/default.d/*.conf;
+
+  error_page 404 /404.html;
+  location = /404.html {
+  }
+
+  error_page 500 502 503 504 /50x.html;
+  location = /50x.html {
+  }
+}
+```
+
+Maybe you will think that the code is similar to the nginx config code in step number 8. The difference are `port number` assign with selected port and `root directory` assign with your project directory that you have been created before
+
+10 | Finally the final step. Link the config file that have been just created on `sites-available` to `sites-enabled` with this following command:
+
+```linux
+$ ln -s /etc/nginx/sites-available/project-name.conf /etc/nginx/sites-enabled/project-name.conf
+```
+
+After that you should restart nginx service
+
+```linux
+$ systemctl restart nginx
+```
+
+note: sometimes at this step you will facing an error that nginx service cannot be restart. Try to check your setting from the step 1 untill step 10 again. If you are sure that it is in accordance with the instructions, then it is likely that what happen is that the port you have chosen cannot be used by the nginx service. Then try using another port and repeat the steps above starting from the first step.
+
+If you can successfully restart nginx service, access `public ip with port` on your browser
+
+```linux
+http://server_public_ip:3001/
+```
+
+</p>
+</details>
+
+<details>
+<summary><b>Deployment on default HTTP port</b></summary>
+
+<p>
+
+In this section we will use `default HTTP port (port 80)`.
+
+1 | Go to the root directory and run the following command to get root access
+
+```linux
+$ sudo su
+```
+
+2 | Enable firewall on default HTTP port
+
+```linux
+$ firewall-cmd --permanent --zone=public --add-service=http
+$ firewall-cmd --permanent --zone=public --add-port=80/tcp
+$ firewall-cmd --reload
+```
+
+After that check is the default HTTP port already enabled with the following command:
+
+```linux
+$ firewall-cmd --permanent --zone=public --list-all
+```
+
+3 | Create a forntend project folder which will be read by nginx
+
+```linux
+$ mkdir -p /var/www/project-name
+```
+
+note: -p flag is used to create nested directory and project-name is the name of the project folder
+
+4 | Change the project folder permissions to make it accessible to everyone with the followng command:
+
+```linux
+$ chown -R $USER:$USER /var/www/project-name
+$ chmod -R 755 /var/www
+$ restorecon -R /var/www/project-name
+```
+
+5 | Create index.html as the main html file which will be read by nginx. Or you can copy or clone your ready-project for example using git. But in this chase we will try to create new html file
+
+```linux
+$ nano /var/www/project-name/index.html
+```
+
+Once you are directed to the text editor, paste the following html code as an example project
+
+```html
+<html>
+  <head>
+    <title>Whelcome to my app :)</title>
+  </head>
+  <body>
+    <h1>Hello! This is an app default HTTP port 80</h1>
+  </body>
+</html>
+```
+
+6 | Open Nginx configuration file
+
+```linux
+$ nano /etc/nginx/nginx.conf
+```
+
+You will see the nginx configuration code. Inside the html { ... } block find the code that similar with:
+
+```conf
+server {
+  listen        80;
+  listen        [::]:80;
+  server_name   _;
+  root          /usr/share/nginx/html;
+
+  # Load configuration files for the default server block.
+  include /etc/nginx/default.d/*.conf;
+
+  error_page 404 /404.html;
+  location = /404.html {
+  }
+
+  error_page 500 502 503 504 /50x.html;
+  location = /50x.html {
+  }
+}
+```
+
+That code is server config block code for default http port (port 80). Change the root directory project with your project directory that you just have been created. It should similar like this:
+
+```conf
+server {
+  listen        80;
+  listen        [::]:80;
+  server_name   _;
+  root          /var/www/project-name;
+
+  # Load configuration files for the default server block.
+  include /etc/nginx/default.d/*.conf;
+
+  error_page 404 /404.html;
+  location = /404.html {
+  }
+
+  error_page 500 502 503 504 /50x.html;
+  location = /50x.html {
+  }
+}
+```
+
+7 | Restart nginx service
+
+```linux
+$ systemctl restart nginx
+```
+
+If you can successfully restart nginx service, access server public ip with your browser
+
+```linux
+http://server_public_ip/
+```
+
+</p>
+</details>
+
+<details>
+<summary><b>Deployment on default HTTPS port</b></summary>
+
+<p>
+COMING SOON 😫😋😁
+</p>
+</details>
 
 ## Backend Deployment
 
