@@ -2,7 +2,7 @@
 
 ## Description
 
-This repository is documentation on how to setup a web server on CentOS 7 operating system. Using Nginx web server, Microsoft SQL Server database and NodeJs environtment project such as express, react, vue, angular and etc.
+This repository is documentation on how to setup a web server on CentOS 7 operating system. Using Nginx web server, Microsoft SQL Server database and NodeJs environtment project such as Express, React, Vue, Angular and etc.
 
 ## Install Everything Needed
 
