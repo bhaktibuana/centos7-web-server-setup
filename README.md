@@ -508,7 +508,7 @@ server {
 That code is server config block code for default http port (port 80). Under that code (outside server { ... } block), add this following code
 
 ```conf
-include /etc/nginx/sites-enabled/*.conf
+include /etc/nginx/sites-enabled/*.conf;
 ```
 
 And it will be looks like this:
@@ -532,7 +532,7 @@ server {
   }
 }
 
-include /etc/nginx/sites-enabled/*.conf
+include /etc/nginx/sites-enabled/*.conf;
 ```
 
 9 | Create new nginx config file at `sites-available` with file name as your project name
