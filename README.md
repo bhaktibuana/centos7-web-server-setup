@@ -1087,3 +1087,35 @@ $ pm2 delete selected_pm2_name
 
 </p>
 </details>
+
+## ✨Bonussss✨
+
+<details>
+<summary><b>Install MySQL on CentOS 7</b></summary>
+
+<p>
+
+1 | Go to the root directory and run the following command to get root access
+
+```linux
+$ sudo su
+```
+
+2 | Before start to install MySQL, update all package on your system
+
+```linux
+$ yum update
+```
+
+3 | In web browser, visit:
+
+```
+https://dev.mysql.com/downloads/repo/yum/
+```
+
+You will see something like this:
+
+
+
+</p>
+</details>
