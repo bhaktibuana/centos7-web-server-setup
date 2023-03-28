@@ -1115,7 +1115,363 @@ https://dev.mysql.com/downloads/repo/yum/
 
 You will see something like this:
 
+![alt text](https://github.com/bhaktibuana/centos7-web-server-setup/blob/main/assets/download-mysql.png?raw=true)
 
+There are many version of MySQL, choose the `Red Hat Enterprise Linux 7` for CentOS 7. And copy the text in the red box as shown in the image.
+
+4 | Locate the desired version, and update it as needed in the link below (paste from the text you just copied):
+
+```linux
+$ curl -sSLO https://dev.mysql.com/get/mysql80-community-release-el7-7.noarch.rpm
+```
+
+Once the rpm file is saved, we will verify the integrity of the download by running `md5sum` and comparing it with the corresponding MD5 value listed on the site:
+
+```linux
+$ md5sum mysql80-community-release-el7-7.noarch.rpm
+```
+
+the output will be like this:
+
+```linux
+e2bd920ba15cd3d651c1547661c60c7c  mysql80-community-release-el7-7.noarch.rpm
+```
+
+5 | Add MySQL yum repositories and install MySQL Server
+
+```linux
+$ rpm -ivh mysql80-community-release-el7-7.noarch.rpm
+$ yum install mysql-server
+```
+
+if there any question while you installing MySQL just press `y`
+
+6 | Start the MySQL Service
+
+```linux
+$ systemctl start mysqld
+```
+
+and check the service status
+
+```linux
+$ systemctl status mysqld
+```
+
+During the installation process, a temporary password is generated for the MySQL root user. Locate it in the mysqld.log with this command:
+
+```linux
+$ grep 'temporary password' /var/log/mysqld.log
+```
+
+7 | Configuring MySQL
+
+Before we start to use MySQL we need to configure the root password first.
+
+```linux
+$ mysql_secure_installation
+```
+
+This will prompt you for the default root password. As soon as you enter it, you will be required to change it.
+
+```linux
+The existing password for the user account root has expired. Please set a new password.
+
+New password:
+```
+
+Enter a new 12-character password that contains at least one uppercase letter, one lowercase letter, one number and one special character. Re-enter it when prompted.
+
+And you'll receive feedback after entering the password, just answer `No` at all.
+
+8 | Testing MySQL
+
+We can verify our installation and get information about it by connecting with the `mysqladmin` tool, a client that lets you run administrative commands. Use the following command to connect to MySQL as root (`-u root`), prompt for a password (`-p`), and return the version.
+
+```linux
+$ mysqladmin -u root -p version
+```
+
+the output will be similar like this:
+
+```linux
+mysqladmin  Ver 8.0.28 for Linux on x86_64 (MySQL Community Server - GPL)
+Copyright (c) 2000, 2022, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Server version		8.0.28
+Protocol version	10
+Connection		Localhost via UNIX socket
+UNIX socket		/var/lib/mysql/mysql.sock
+Uptime:			3 min 2 sec
+
+Threads: 2  Questions: 14  Slow queries: 0  Opens: 133  Flush tables: 3  Open tables: 49  Queries per second avg: 0.076
+```
+
+This indicates your installation has been successful.
+
+9 | Enable firewall on MySQL port (port 3306 default)
+
+```linux
+$ firewall-cmd --permanent --zone=public --add-port=3306/tcp
+$ firewall-cmd --reload
+```
+
+After that check is the port already enabled with the following command:
+
+```linux
+$ firewall-cmd --permanent --zone=public --list-ports
+```
+
+10 | Enable SSL for MySQL
+
+```linux
+$ mysql -u root -p
+```
+
+Enter your MySQL root password. Then check SSL by typing:
+
+```linux
+mysql> SHOW GLOBAL VARIABLES LIKE `%ssl%`;
+```
+
+The output will be like this:
+
+```linux
++---------------+-----------------+
+| Variable_name | Value           |
++---------------+-----------------+
+| have_openssl  | YES             |
+| have_ssl      | YES             |
+| ssl_ca        | ca.pem          |
+| ssl_capath    |                 |
+| ssl_cert      | server-cert.pem |
+| ssl_cipher    |                 |
+| ssl_crl       |                 |
+| ssl_crlpath   |                 |
+| ssl_key       | server-key.pem  |
++---------------+-----------------+
+9 rows in set (0.01 sec)
+```
+
+After that you can check SSL status
+
+```linux
+mysql> STATUS;
+```
+
+the output will be like this:
+
+```linux
+--------------
+mysql Ver 14.14 Distrib 5.7.18, for Linux (x86_64) using EditLine wrapper
+
+Connection id: 4
+Current database:
+Current user: root@localhost
+SSL: Not in use
+Current pager: stdout
+Using outfile: ''
+Using delimiter: ;
+Server version: 5.7.18 MySQL Community Server (GPL)
+Protocol version: 10
+Connection: Localhost via UNIX socket
+Server characterset: latin1
+Db characterset: latin1
+Client characterset: utf8
+Conn. characterset: utf8
+UNIX socket: /var/lib/mysql/mysql.sock
+Uptime: 27 min 25 sec
+
+Threads: 1 Questions: 12 Slow queries: 0 Opens: 113 Flush tables: 1 Open tables: 106 Queries per second avg: 0.007
+--------------
+```
+
+as you can see SSL is still not in use. type `exit` at mysql CLI and lets enable the SSL.
+
+To enable the SSL for MySQL we need to modify MySQL config file.
+
+```linux
+$ nano /etc/my.cnf
+```
+
+Under the `[mysqld]` add the following content:
+
+```linux
+ssl-ca=/var/lib/mysql/ca.pem
+ssl-cert=/var/lib/mysql/server-cert.pem
+ssl-key=/var/lib/mysql/server-key.pem
+```
+
+for example:
+
+```linux
+[mysqld]
+
+...
+...
+other config code
+...
+...
+
+ssl-ca=/var/lib/mysql/ca.pem
+ssl-cert=/var/lib/mysql/server-cert.pem
+ssl-key=/var/lib/mysql/server-key.pem
+```
+
+after that add the following content:
+
+```linux
+[client]
+ssl-ca=/var/lib/mysql/ca.pem
+ssl-cert=/var/lib/mysql/client-cert.pem
+ssl-key=/var/lib/mysql/client-key.pem
+```
+
+it will be like follows:
+
+```linux
+[mysqld]
+
+...
+...
+other config code
+...
+...
+
+ssl-ca=/var/lib/mysql/ca.pem
+ssl-cert=/var/lib/mysql/server-cert.pem
+ssl-key=/var/lib/mysql/server-key.pem
+
+[client]
+ssl-ca=/var/lib/mysql/ca.pem
+ssl-cert=/var/lib/mysql/client-cert.pem
+ssl-key=/var/lib/mysql/client-key.pem
+```
+
+save and restart MySQL service
+
+```linux
+$ systemctl restart mysqld
+```
+
+After that open mysql again by typing:
+
+```linux
+$ mysql -u root -p
+```
+
+Enter your MySQL root password and check the SSL status by typing the following command on MySQL CLI:
+
+```linux
+mysql> STATUS;
+```
+
+the output will be like this:
+
+```linux
+--------------
+mysql Ver 14.14 Distrib 5.7.18, for Linux (x86_64) using EditLine wrapper
+
+Connection id: 3
+Current database: 
+Current user: root@localhost
+SSL: Cipher in use is DHE-RSA-AES256-SHA
+Current pager: stdout
+Using outfile: ''
+Using delimiter: ;
+Server version: 5.7.18 MySQL Community Server (GPL)
+Protocol version: 10
+Connection: Localhost via UNIX socket
+Server characterset: latin1
+Db characterset: latin1
+Client characterset: utf8
+Conn. characterset: utf8
+UNIX socket: /var/lib/mysql/mysql.sock
+Uptime: 1 min 32 sec
+
+Threads: 1 Questions: 6 Slow queries: 0 Opens: 105 Flush tables: 1 Open tables: 98 Queries per second avg: 0.065
+--------------
+```
+
+SSL is now enabled and connections are secured through it.
+
+11 | Enable remote connection
+
+Edit the MySQL config file by typing the following command:
+
+```linux
+$ nano /etc/my.cnf
+```
+
+At the end of the `[mysqld]` add the following code:
+
+```linux
+bind-address=*
+```
+
+save and restart MySQL service
+
+```linux
+$ systemctl restart mysqld
+```
+
+12 | Create a new user for remote connection
+
+Open MySQL again by typing:
+
+```linux
+$ mysql -u root -p
+```
+
+enter your MySQL root password and crate new user as follows:
+
+```linux
+mysql> CREATE USER 'root'@'%' IDENTIFIED BY 'your_password_here';
+```
+
+check the user list on your MySQL
+
+```linux
+mysql> USE mysql;
+mysql> SELECT user, host from user;
+```
+
+you will see something like this:
+
+```linux
++------------------+-----------+
+| user             | host      |
++------------------+-----------+
+| root             | %         |
+| mysql.infoschema | localhost |
+| mysql.session    | localhost |
+| mysql.sys        | localhost |
+| root             | localhost |
++------------------+-----------+
+5 rows in set (0.00 sec)
+```
+
+We can see that there are two root user with host `localhost` and `%`. The root with host `localhost` is the default user, and root with host `%` is the root user that you just created.
+
+After that, you need to grant all access to both root user.
+
+```linux
+mysql> GRANT ALL ON *.* TO 'root'@'localhost';
+mysql> GRANT ALL ON *.* TO 'root'@'%';
+mysql> FLUSH PRIVILEGES;
+```
+
+Well, everything is set up. You can remote your MySQL on your computer with these following configs:
+
+```
+host      : your_public_ip
+user      : root
+password  : your_root_password
+```
 
 </p>
 </details>
