@@ -590,7 +590,10 @@ server {
   root         /var/www/project-name;
 
   location / {
-    try_files $uri /index.html;
+    if ( $uri = '/index.html' ) {
+      add_header Cache-Control no-store always;
+    }
+    try_files $uri $uri/ /index.html;
   }
 
   # Load configuration files for the default server block.
@@ -731,7 +734,10 @@ server {
   root          /var/www/project-name;
 
   location / {
-    try_files $uri /index.html;
+    if ( $uri = '/index.html' ) {
+      add_header Cache-Control no-store always;
+    }
+    try_files $uri $uri/ /index.html;
   }
 
   # Load configuration files for the default server block.
@@ -1377,7 +1383,7 @@ the output will be like this:
 mysql Ver 14.14 Distrib 5.7.18, for Linux (x86_64) using EditLine wrapper
 
 Connection id: 3
-Current database: 
+Current database:
 Current user: root@localhost
 SSL: Cipher in use is DHE-RSA-AES256-SHA
 Current pager: stdout
