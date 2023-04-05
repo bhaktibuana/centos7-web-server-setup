@@ -1018,22 +1018,45 @@ note: before you start the project locally, make sure you have alraedy setting u
 Go to the server directory that you have been created
 
 ```linux
-$ cd /var/server
+$ cd /var/server/project-name
 ```
 
 After that run your project with pm2:
 
 ```linux
-$ pm2 start ./project-name/src/index.js --name="type_name_here"
+$ pm2 start ./src/index.js --name="type_name_here"
 ```
 
 explanation:
 
-• `start` is command to execute your project. It's not always use start, it based on your `package.json` file scripts (see 8th step) for example based package.json file on 8th step above you can use `pm2 start` or `pm2 dev` or etc.
+• `start` is command to execute your project.
 
 • `./project-name/src/index.js` is path to target your main project file (in this case is index.js).
 
 • `--name="type_name_here"` is the name that will shown on the pm2 running list. For example `--name="my-awesome-backend"`.
+
+Or you can run with your `package.json` scripts with this following command:
+
+```linux
+$ pm2 start npm --name "type_name_here" -- run script_name
+```
+
+explanation
+
+• `start` is command to execute your project.
+
+• `npm` is to execute with `npm`.
+
+• `--name "type_name_here"` is the name that will shown on the pm2 running list. For example `--name "my-awesome-backend"`.
+
+• `-- run script_name` is to choose which script have to bee executed.
+For example `-- run start` or `-- run dev` or etc.
+
+Full example here:
+
+```linux
+$ pm2 start npm --name "my-awesome-backend" -- run start
+```
 
 After you execute the pm2, check the pm2 list to verify that it is running by the following command:
 
